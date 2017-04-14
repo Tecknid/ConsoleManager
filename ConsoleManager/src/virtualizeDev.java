@@ -5,8 +5,6 @@ import javax.bluetooth.*;
 import java.util.Vector;
 import java.io.*;
 import java.util.*;
-import java.lang.*;
-import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -28,41 +26,40 @@ public class virtualizeDev {
     public static int chosenProt;
       
     public  static void run() throws IOException{
+    // HashMap<Object,Object> map = new HashMap<>();
+           
      Vector originalDevice = new Vector(BluetoothDeviceDiscovery.deviceDiscovered);
      Vector deviceServices = new Vector(ServiceDiscoveryAgent.serviceFound);
         
-        System.out.println(originalDevice);
-        Vector clone = (Vector) originalDevice.clone();
-        for(int i = 0; i < originalDevice.size();i++){
-            System.out.println(index + ":" + originalDevice.elementAt(i));
+        //System.out.println(originalDevice);       
+        for(int i = 0; i < deviceServices.size();i++){           
+            //map.put(originalDevice.elementAt(i),deviceServices.elementAt(i));
+            System.out.println(index + ":" + deviceServices.elementAt(i));
             index++;
         }
         
-            System.out.println("Select a device index to virtualize");
-           
-             
-                //BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
-                //int chosenProt = Integer.parseInt(read.readLine().trim());
+        
+            System.out.println("Select a device service to virtualize");
                 while(corrIndex!=true){
                     try{
                     BufferedReader read = new BufferedReader(new InputStreamReader(System.in));                   
                     int chosenProt = Integer.parseInt(read.readLine().trim());
-                    rangeCheck(chosenProt,originalDevice);
+                    rangeCheck(chosenProt,deviceServices);
                     }catch(NumberFormatException e){
                         System.out.println("Please enter an index value; not a string!");
                     }
                 }
-                deviceName = (RemoteDevice)originalDevice.elementAt(chosenProt);
+                deviceName = ServiceDiscoveryAgent.btDevice;
                 serviceName = deviceServices.elementAt(chosenProt);
                 deviceCreation dc = new deviceCreation(deviceName,serviceName);            
-                System.out.println("virtual copy created for device: " + dc.deviceName + " service: " + dc.serviceName);
+                System.out.println("virtual copy created for device: "+ dc.deviceName + " : with service " + dc.serviceName);
                 devicePicked = true;
             
            
          do{  
             try{
             if(timeActive > 1){
-                 System.out.println("Virtual device has been accessed!:");
+                 System.out.println("Virtual device has been accessed!" + timeActive);
             }else{
                  System.out.println("Virtual device Accessed :" + timeActive + " times!");
             }
@@ -100,14 +97,14 @@ public class virtualizeDev {
     }
     
     //inner class to construct the virtual copy
-     public static class deviceCreation{
+     public final static class deviceCreation{
 
-         public static RemoteDevice deviceName;
-         public static Object serviceName;
+         private static  RemoteDevice deviceName;
+         private static  Object serviceName  ;
          
          public deviceCreation(RemoteDevice d,Object e){
-             this.deviceName = d;
-             this.serviceName = e;           
+             deviceCreation.deviceName = d;
+             deviceCreation.serviceName = e;           
          }
          
          public RemoteDevice getDevice(){
@@ -122,8 +119,7 @@ public class virtualizeDev {
      public static void rangeCheck(int index,Vector v){
          try{
          if(index >= v.size() | index < 0){
-             System.out.println("Please choose a listed index!");
-             
+             System.out.println("Please choose a listed index!");             
          }
          else{
              corrIndex = true;

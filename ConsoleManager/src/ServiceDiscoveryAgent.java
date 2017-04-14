@@ -8,7 +8,6 @@ import javax.bluetooth.ServiceRecord;
 import javax.bluetooth.UUID; 
 import java.io.IOException; 
 import java.io.InputStreamReader;
-import java.util.Enumeration;
 import java.util.Vector;
 import javax.bluetooth.DataElement;
 
@@ -16,25 +15,53 @@ public class ServiceDiscoveryAgent{
 
     public static int index = 0;
     public static final Vector serviceFound = new Vector();
-    public static final UUID testUUID = new UUID("00112233445566778899AABBCCDDEEFF",false);
     public static UUID  serviceUUIDT;
     public static String url;
     public static boolean protChosen = false; 
     public static boolean opAll = false;
-    public static String chosenDev = BluetoothDeviceDiscovery.chosenIndex;
+    public static Object devicesFound = BluetoothDeviceDiscovery.deviceDiscovered;
+    public static boolean corrIndex = false;
+    public static Vector deviceDiscovered = BluetoothDeviceDiscovery.deviceDiscovered;
+    public static int chosenProt =0;
+    public static String [] protoName = new String[3];
+    public static boolean obexChosen = false;
+    public static boolean bnepChosen = false;
+    public static boolean httpChosen = false;
+    public static boolean rfComm = false;
+    public static boolean l2Cap = false;
+    public static boolean sdp = false;
+    public static boolean att = false;
+    public static RemoteDevice btDevice;
    
     public static void main(String[] args) throws IOException, InterruptedException {
+       BluetoothDeviceDiscovery.main(null);
+       System.out.println("Please Select a device from the index to connect to..");
+        while(corrIndex!=true){
+                    try{
+                    BufferedReader read = new BufferedReader(new InputStreamReader(System.in));                   
+                    chosenProt = Integer.parseInt(read.readLine().trim());     
+                    rangeCheck(chosenProt,deviceDiscovered);
+                    }catch(NumberFormatException e){
+                        System.out.println("Please enter an index value; not a string!");
+                    }                    
+                }
+                btDevice= (RemoteDevice)deviceDiscovered.elementAt(chosenProt);
+                
+                
 
         // First run RemoteDeviceDiscovery and use discoved device
-        BluetoothDeviceDiscovery.main(null);
+       
         serviceFound.clear();
         System.out.println(" Available Protocols: ");
-        System.out.println("1: OBEX");
-        System.out.println("2: RFCOMM");   
-        System.out.println("3: L2CAP");
+        System.out.println("1: OBEX (Object Exchange Protocol)");
+        System.out.println("2: RFCOMM (Radio Frequency communication)");   
+        System.out.println("3: L2CAP (Logical Link Control and Adaptation Layer Protocol)");
+        System.out.println("4: SDP (Service Discovery Protocl)");
+        System.out.println("5: HTTP (Hyper Text Transfer Protocol)");
+        System.out.println("6: BNEP (Bluetooth Netwoek Encapsulation Protocol)");
+        System.out.println("7: ATT (Low Energy Attribute Protocol)");
         System.out.println("Please select a protocol to search with..");
-        UUID [] chosenProtocol = new UUID[2];
-        int[] attrIDs =  new int[1];
+        UUID [] chosenProtocol = new UUID[1];
         
         while(protChosen == false){
         BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
@@ -43,7 +70,8 @@ public class ServiceDiscoveryAgent{
         
                
             switch (chosenProt) {
-                case "obex":                   
+                case "obex":                 
+                    obexChosen =  true;
                     chosenProtocol[0] = UUIDs.OBEX;
                     protChosen = true;
                     System.out.println("OBEX chosen!");
@@ -51,23 +79,39 @@ public class ServiceDiscoveryAgent{
                 case "rfcomm":
                     chosenProtocol[0] = UUIDs.RFCOMM;
                     protChosen = true;
-                    System.out.println("RFCOMM chosen!");
-                    break;
-       
+                    rfComm = true;
+                    System.out.println("RFCOMM chosen!");                  
+                    break;      
                 case "l2cap":
                     chosenProtocol[0] = UUIDs.L2CAP;
+                    l2Cap = true;
                     protChosen = true;
                     System.out.println("L2CAP chosen!");
-                    break;
-                  case "all":
-                    chosenProtocol[0] = UUIDs.L2CAP;
-                    chosenProtocol[1] = UUIDs.RFCOMM;
-                    chosenProtocol[2] = UUIDs.OBEX;
-                    opAll = true;
+                    break;       
+                case "sdp":
+                    chosenProtocol[0] = UUIDs.SDP;
+                    sdp = true;
                     protChosen = true;
-                    System.out.println("L2CAP chosen!");
+                    System.out.println("SDP chosen!");
+                    break;  
+                case "http":
+                    chosenProtocol[0] = UUIDs.HTTP;
+                    httpChosen = true;
+                    protChosen = true;
+                    System.out.println("SDP chosen!");
+                    break;    
+                case "bnep":
+                    chosenProtocol[0] = UUIDs.BNEP;
+                    bnepChosen = true;
+                    protChosen = true;
+                    System.out.println("SDP chosen!");
+                    break;    
+                 case "att":
+                    chosenProtocol[0] = UUIDs.ATT;
+                    att = true;
+                    protChosen = true;
+                    System.out.println("ATT chosen!");
                     break; 
-          
                 default:
                     System.out.println("Please select a listed Protocol!");
                     break;
@@ -97,6 +141,7 @@ public class ServiceDiscoveryAgent{
 
             @Override
             public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
+               
                 for (ServiceRecord servRecord1 : servRecord) {
                     String url = servRecord1.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
                     if (url == null) {
@@ -111,6 +156,7 @@ public class ServiceDiscoveryAgent{
                     }
                 }
             }
+          
 
             @Override
             public void serviceSearchCompleted(int transID, int respCode) {
@@ -122,13 +168,11 @@ public class ServiceDiscoveryAgent{
 
         };
 
-       
+     
+            
         
            
-            for(Enumeration en = BluetoothDeviceDiscovery.deviceDiscovered.elements(); en.hasMoreElements(); ) {
-            RemoteDevice btDevice = (RemoteDevice)en.nextElement();
-
-            synchronized(serviceSearchCompletedEvent) {
+            synchronized(serviceSearchCompletedEvent) {              
                 System.out.println("search services on " + btDevice.getBluetoothAddress() + " " + btDevice.getFriendlyName(false));
                 LocalDevice.getLocalDevice().getDiscoveryAgent().searchServices(null, chosenProtocol, btDevice, listener);
                 serviceSearchCompletedEvent.wait();
@@ -141,14 +185,26 @@ public class ServiceDiscoveryAgent{
                         index++;
                         System.out.println(index + " :" + o );                         
                     });                    
-                }
-            }
+                }              
         }
-            
-        
-
     }
+    
+    //make sure the chosen index for devices are in range
+       public static void rangeCheck(int index,Vector v){
+         try{
+         if(index >= v.size() | index < 0){
+             System.out.println("Please choose a listed index!");
+             
+         }
+         else{
+             corrIndex = true;
+         }
+         }catch(NumberFormatException e){
+             System.out.println("Please enter an index, not a string!");
+         }
+     }
+       
+  }
 
-} 
 
 
